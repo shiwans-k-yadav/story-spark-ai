@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getShortenedText, ITopicData, topicsData } from "./stories.utils";
 import toast, { Toaster } from "react-hot-toast";
 import { useCreatePostMutation } from "../../redux/apis/post.api";
+import jsPDF from "jspdf";
 
 export interface IStories {
   uuid: string;
@@ -32,6 +33,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [topics, setTopics] = useState<ITopicData[]>(topicsData);
   const [selectTopics, setSelectTopics] = useState<ITopicData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
   const [createPost] = useCreatePostMutation();
 
   useEffect(() => {
@@ -53,7 +55,43 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     updatedTopics[index].selected = !updatedTopics[index].selected;
     setTopics(updatedTopics);
   };
+const handleCopyStory = async () => {
+  if (selectedStory?.content) {
+    await navigator.clipboard.writeText(selectedStory.content);
+    setIsCopied(true);
+    toast.success("Story copied!");
+    setTimeout(() => setIsCopied(false), 2000);
+       }
+    };
 
+const handleExportPDF = () => {
+  if (!selectedStory) {
+    toast.error("No story available to export.");
+    return;
+  }
+
+  try {
+    const doc = new jsPDF();
+
+    const title = selectedStory.title || "Story";
+    const content = selectedStory.content || "";
+
+    doc.setFontSize(18);
+    doc.text(title, 15, 20);
+
+    doc.setFontSize(12);
+
+    const splitText = doc.splitTextToSize(content, 180);
+    doc.text(splitText, 15, 35);
+
+    doc.save(`${title}.pdf`);
+
+    toast.success("PDF downloaded!");
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to export PDF.");
+  }
+};
   const handelPublishStory = async () => {
     if (!isLogin) {
       toast.error("Please login to publish the story.");
@@ -82,17 +120,44 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     }
   };
 
+  if (!stories || stories.length === 0) {
+    return (
+      <div className="mt-16 px-4 sm:px-6 lg:px-8 pb-16 flex justify-center">
+        <div className="rounded-2xl border border-slate-700 bg-slate-800/40 p-8 sm:p-12 text-center text-slate-400 max-w-2xl w-full shadow-lg transition-all duration-500 ease-in-out mx-auto">
+          <div className="text-5xl mb-6 animate-pulse">✨</div>
+          <h3 className="text-2xl font-bold text-slate-200 tracking-wide">
+            Your AI-generated story will appear here
+          </h3>
+          <p className="mt-3 text-base text-slate-400">
+            Enter a creative prompt above and let StorySparkAI craft something magical.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-16 mx-10 pb-10">
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-8 ">
-          <div className="flex justify-between items-center">
+    <div className="mt-16 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto pb-10">
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+          }
+        `}
+      </style>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in-up">
+        <div className="col-span-1 lg:col-span-8 flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div className="">
               <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
                 {selectedStory?.title}
               </h1>
             </div>
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-start sm:justify-end">
               <div className="flex -space-x-5">
                 {stories && stories.length > 0 ? (
                   stories.map((story) => (
@@ -121,35 +186,59 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
             </div>
           </div>
 
-          <div className="bg-blue-500/10 border border-gray-500 p-6 rounded-lg shadow-lg">
+          <div className="bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+            {/* Ambient AI Glow inside the story card */}
+            <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-300">
+              <h3 className="text-xl font-bold text-slate-200 relative z-10">
                 Generated Story
               </h3>
-              <span className="text-sm text-gray-800">
+              <div className="flex items-center gap-2 relative z-10">
+                {selectedStory && (
+                  <>
+                    <button
+                      type="button"
+                      className="rounded-lg px-4 py-2 bg-slate-700 text-slate-200 font-semibold cursor-pointer hover:bg-slate-600 transition-colors"
+                      onClick={handleCopyStory}
+                    >
+                      {isCopied ? "✓ Copied" : "📋 Copy"}
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg px-4 py-2 bg-purple-700 text-slate-200 font-semibold cursor-pointer hover:bg-purple-600 transition-colors"
+                      onClick={handleExportPDF}
+                    >
+                      📄 Export PDF
+                    </button>
+                  </>
+                )}
                 <button
-                  className={`rounded-lg px-4 py-1 font-semibold flex items-center space-x-2 cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 text-gray-300 ${
+                  type="button"
+                  className={`rounded-lg px-5 py-2 font-semibold flex items-center space-x-2 cursor-pointer bg-blue-600 text-white transition-all duration-200 ${
                     loading
                       ? "opacity-50 cursor-not-allowed"
-                      : "hover:shadow-lg hover:shadow-indigo-500/50"
+                      : "hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95"
                   }`}
                   onClick={handelPublishStory}
+                  disabled={loading}
                 >
                   {loading ? "Publishing..." : "Publish"}
                 </button>
-              </span>
+              </div>
             </div>
-            <div className="prose max-w-none text-gray-400">
+            <div id="story-content" className="prose prose-invert max-w-none text-slate-300 leading-relaxed tracking-wide relative z-10">
               {selectedStory ? (
-                <p>{selectedStory.content}</p>
+                <p className="break-words">{selectedStory.content}</p>
               ) : (
                 <p>No story available. Please generate a story first.</p>
               )}
             </div>
           </div>
           <div className="mt-7">
-            <div className="bg-blue-500/10 border border-gray-400 rounded-lg shadow-sm p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-300 mb-4">
+            <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-6 mb-8">
+              <h3 className="text-lg font-bold text-slate-200 mb-4">
                 Select Topics
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -158,7 +247,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
                     {topics.map((topic, index) => (
                       <span
                         key={index}
-                        className={`px-3 py-1 ${topic.color} rounded-full text-sm hover:bg-blue-200 cursor-pointer`}
+                        className={`px-4 py-1.5 ${topic.color} rounded-full text-sm font-medium transition-transform hover:scale-105 cursor-pointer shadow-sm`}
                         onClick={() => handleTopicClick(index)}
                       >
                         {topic.selected ? (
@@ -180,30 +269,30 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
           </div>
         </div>
 
-        <div className="col-span-4 ">
+        <div className="col-span-1 lg:col-span-4">
           <div className="mb-5">
-            <h1 className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
               Preview
             </h1>
           </div>
-          <div className="bg-blue-500/10 border border-gray-400 rounded-lg shadow-lg">
+          <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden group">
             {selectedStory ? (
               <div className="relative flex flex-col rounded-lg">
-                <div className="relative m-2.5 overflow-hidden text-white rounded-md">
+                <div className="relative m-3 overflow-hidden text-white rounded-xl">
                   <img
                     src={selectedStory.imageURL}
                     alt="card-image"
-                    className="w-full h-40 object-cover rounded-b-md"
+                    className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 <div className="px-3 py-1">
-                  <div className="mb-2 rounded-full bg-cyan-600 py-0.5 px-2.5 border border-transparent text-xs text-gray-400 transition-all shadow-sm w-20 text-center">
-                    {selectedStory.tag.toUpperCase()}
+                  <div className="mb-2 inline-flex items-center rounded-full bg-purple-600 py-1 px-3 text-xs font-semibold text-white shadow-sm">
+                   {selectedStory.tag.toUpperCase()}
                   </div>
                   <h6 className="mb-1 text-gray-300 text-xl font-semibold">
                     {selectedStory.title}
                   </h6>
-                  <p className="text-gray-400 font-light">
+                  <p className="text-gray-400 font-light breakwords text-sm sm:text-base">
                     {getShortenedText(selectedStory.content)}
                   </p>
                 </div>
