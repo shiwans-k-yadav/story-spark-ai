@@ -98,7 +98,8 @@ const VerifyEmail = async (payload: IEmailBody) => {
     if (error instanceof ApiError) {
       throw error;
     }
-    console.error("Mail Error:", error); throw new ApiError(500, "Failed to send email", error.stack);
+    console.error("Mail Error:", error);
+    throw new ApiError(500, "Failed to send email");
   }
 };
 

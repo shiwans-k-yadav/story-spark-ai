@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 
 async function main() {
   try {
-    console.log("Attempting to connect with:", process.env.VERIFY_EMAIL, process.env.VERIFY_PASSWORD);
+    console.log("Attempting to connect with:", process.env.VERIFY_EMAIL, "password set:", Boolean(process.env.VERIFY_PASSWORD));
     await transporter.verify();
     console.log("Success!");
   } catch (error) {
