@@ -31,6 +31,19 @@ import { toast } from "react-hot-toast";
 
 import { FaXTwitter } from "react-icons/fa6";
 
+interface IStoryVersion {
+  _id: string;
+  storyId: string;
+  content: string;
+  title: string;
+  prompt?: string;
+  generationType: string;
+  versionNumber: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const PostDetailsComponent = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -72,7 +85,7 @@ const PostDetailsComponent = () => {
   });
   const [restoreVersion, { isLoading: isRestoring }] = useRestoreVersionMutation();
 
-  const isAuthor = currentUser && authorId === currentUser?.userId;
+  const isAuthor = !!currentUser && authorId === currentUser?.userId;
 
   const handleFollow = async () => {
     if (!currentUser) {
@@ -209,17 +222,6 @@ const PostDetailsComponent = () => {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 transition-colors duration-300 dark:bg-[#0b1329] dark:text-white relative">
-      <style>
-        {`
-          @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-          }
-          .animate-slide-in {
-            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-        `}
-      </style>
 
       <div className="max-w-6xl mx-auto px-4">
         <div className="py-6 flex justify-between">
@@ -450,6 +452,7 @@ const PostDetailsComponent = () => {
             <button
               onClick={() => setShowTimeline(false)}
               className="w-8 h-8 rounded-full bg-slate-850 border border-slate-750 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
+              aria-label="Close story timeline"
             >
               ✕
             </button>
@@ -463,7 +466,7 @@ const PostDetailsComponent = () => {
               </div>
             ) : versions && versions.length > 0 ? (
               <div className="relative border-l border-slate-800 pl-4 ml-2 space-y-6">
-                {versions.map((v: any) => {
+                {versions.map((v: IStoryVersion) => {
                   let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
                   if (v.generationType === "edited") badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/30";
                   else if (v.generationType === "regenerated") badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/30";

@@ -275,9 +275,9 @@ const updatePost = async (
   // Automatically create version snapshot of the current state BEFORE overwriting
   await StoryVersionService.createVersionSnapshot(
     postId,
+    user._id.toString(),
     payload.prompt || "",
-    payload.generationType || "edited",
-    user._id.toString()
+    payload.generationType || "edited"
   );
 
   // Overwrite post content

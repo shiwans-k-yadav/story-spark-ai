@@ -3,12 +3,13 @@ import ApiError from "../../../errors/api_error";
 import { Post } from "../post/post.model";
 import { StoryVersion } from "./story_version.model";
 import { IStoryVersion } from "./story_version.interface";
+import { IPost } from "../post/post.interface";
 
 const createVersionSnapshot = async (
   storyId: string,
+  userId: string,
   prompt: string = "",
-  generationType: string = "edited",
-  userId: string
+  generationType: string = "edited"
 ): Promise<IStoryVersion | null> => {
   try {
     const post = await Post.findById(storyId);
@@ -16,24 +17,36 @@ const createVersionSnapshot = async (
       return null;
     }
 
-    // Find the highest version number to determine the next one
-    const lastVersion = await StoryVersion.findOne({ storyId })
-      .sort({ versionNumber: -1 })
-      .select("versionNumber");
+    const maxRetries = 5;
+    for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+      try {
+        // Re-read the latest version number on each attempt so concurrent writers
+        // that win the race cause a retry instead of silently skipping a snapshot.
+        const lastVersion = await StoryVersion.findOne({ storyId })
+          .sort({ versionNumber: -1 })
+          .select("versionNumber");
 
-    const nextVersionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
+        const nextVersionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
 
-    const snapshot = await StoryVersion.create({
-      storyId: post._id,
-      content: post.content,
-      title: post.title,
-      prompt: prompt,
-      generationType: generationType,
-      versionNumber: nextVersionNumber,
-      createdBy: userId,
-    });
+        const snapshot = await StoryVersion.create({
+          storyId: post._id,
+          content: post.content,
+          title: post.title,
+          prompt: prompt,
+          generationType: generationType,
+          versionNumber: nextVersionNumber,
+          createdBy: userId,
+        });
 
-    return snapshot;
+        return snapshot;
+      } catch (error: any) {
+        if (error?.code === 11000 && attempt < maxRetries - 1) {
+          continue;
+        }
+        throw error;
+      }
+    }
+    return null;
   } catch (error) {
     // Non-blocking catch to ensure AI generation routes do not crash due to versioning failures
     console.error("Story version snapshot creation failed:", error);
@@ -79,7 +92,7 @@ const getVersionById = async (
 const restoreVersion = async (
   versionId: string,
   userId: string
-): Promise<any> => {
+): Promise<IPost> => {
   const version = await StoryVersion.findById(versionId);
   if (!version) {
     throw new ApiError(httpStatus.NOT_FOUND, "Story version snapshot not found!");
@@ -98,9 +111,9 @@ const restoreVersion = async (
   // 1. Create a version snapshot of the CURRENT active post content so we preserve it (avoiding data loss)
   await createVersionSnapshot(
     post._id.toString(),
+    userId,
     "Snapshot created automatically before restoration",
-    "pre-restoration",
-    userId
+    "pre-restoration"
   );
 
   // 2. Overwrite active post with chosen version
@@ -111,9 +124,9 @@ const restoreVersion = async (
   // 3. Create a final snapshot documenting that a restore event occurred
   await createVersionSnapshot(
     post._id.toString(),
+    userId,
     `Restored to Version ${version.versionNumber}`,
-    "restored",
-    userId
+    "restored"
   );
 
   return post;

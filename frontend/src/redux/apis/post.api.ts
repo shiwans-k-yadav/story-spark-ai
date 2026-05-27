@@ -21,7 +21,7 @@ const postApi = baseApi.injectEndpoints({
     }),
 
     updatePost: build.mutation({
-      query: (arg: { id: string; data: any }) => ({
+      query: (arg: { id: string; data: Record<string, unknown> }) => ({
         url: `/${POST_URL}/${arg.id}`,
         method: "PATCH",
         data: arg.data,
