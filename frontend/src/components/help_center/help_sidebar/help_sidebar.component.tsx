@@ -312,7 +312,9 @@ const HelpSidebar = () => {
               key={section.id}
               type="button"
               onClick={() => scrollToSection(section.id)}
+
               className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+
                 activeSection === section.id
 
                   ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-l-4 border-indigo-600 dark:border-indigo-500 shadow-sm dark:shadow-none"
@@ -340,7 +342,9 @@ const HelpSidebar = () => {
               key={section.id}
               type="button"
               onClick={() => scrollToSection(section.id)}
+
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+
                 activeSection === section.id
 
                   ? "bg-indigo-100 dark:bg-indigo-500/30 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-500/40 shadow-sm dark:shadow-none"
