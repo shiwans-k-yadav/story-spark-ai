@@ -3,8 +3,8 @@ import ApiError from "../../../errors/api_error";
 import { ITokenPayload } from "../../../interfaces/token";
 import { IUser } from "./user.interface";
 import { User } from "./user.model";
-import httpStatus from "http-status";
 import { Post } from "../post/post.model";
+import httpStatus from "http-status";
 import { Comment } from "../comment/comment.model";
 import { Reaction } from "../reaction/reaction.model";
 import { Bookmark } from "../bookmark/bookmark.model";
@@ -195,6 +195,18 @@ const getProfileInfo = async (token: ITokenPayload) => {
   if (!user) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User not found!");
   }
+
+  const publishedPostsCount = await Post.countDocuments({
+    author: user._id,
+    isPublished: true,
+    isDeleted: { $ne: true },
+  });
+
+  if (user.postsCount !== publishedPostsCount) {
+    user.postsCount = publishedPostsCount;
+    await user.save();
+  }
+
   return user;
 };
 
