@@ -323,7 +323,7 @@ const StoriesComponent = () => {
   }, []);
 
   const [stories, setStories] = useState<IStories[]>(
-    draft?.stories?.length ? draft.stories : [{uuid:"test-1",title:"The Wizard's Journey",content:"Merlin walked through the forest toward the castle. The village was far behind him. He crossed the bridge over the river and entered the dungeon beneath the tower. Dragons guarded the mountain beyond the valley. Elena watched from the palace window as Merlin approached the cave near the ocean shore.",tag:"Fantasy",imageURL:"https://via.placeholder.com/400x300"}]
+    [{uuid:"test-1",title:"The Wizard's Journey",content:"Merlin walked through the forest toward the castle. The village was far behind him. He crossed the bridge over the river and entered the dungeon beneath the tower. Dragons guarded the mountain beyond the valley. Elena watched from the palace window as Merlin approached the cave near the ocean shore.",tag:"Fantasy",imageURL:"https://via.placeholder.com/400x300"}]
   );
   const [loading, setLoading] = useState<boolean>(false);
   const { data } = useGetProfileInfoQuery(undefined);
@@ -381,17 +381,24 @@ const StoriesComponent = () => {
   // Autosave Draft
   useEffect(() => {
     const timer = setTimeout(() => {
+      // stories intentionally excluded — API response, not user input
+      // including stories risks hitting localStorage quota (~5MB) silently
       const draftData = {
         prompt: textareaValue,
         genre: selectedGenre,
         length: selectedLength,
         language: selectedLanguage,
-        stories: stories,
       };
-      localStorage.setItem("story_spark_draft", JSON.stringify(draftData));
+      try {
+        localStorage.setItem("story_spark_draft", JSON.stringify(draftData));
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "QuotaExceededError") {
+          toast.error("Couldn't autosave draft — storage limit reached.");
+        }
+      }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [textareaValue, selectedGenre, selectedLength, selectedLanguage, stories]);
+  }, [textareaValue, selectedGenre, selectedLength, selectedLanguage]);
 
   useEffect(() => {
     const selectedLocale =
