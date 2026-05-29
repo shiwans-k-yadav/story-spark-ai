@@ -137,6 +137,29 @@ input[type="password"] {
     transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
 }
 
+.auth-field {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    width: 100%;
+    height: var(--ds-input-height);
+    line-height: var(--ds-input-height);
+    padding: 0 16px;
+    overflow: hidden;
+}
+
+.auth-field::placeholder {
+    line-height: var(--ds-input-height);
+}
+
+.auth-field:-webkit-autofill,
+.auth-field:-webkit-autofill:hover,
+.auth-field:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e1e2ea;
+    box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.04) inset;
+    transition: background-color 9999s ease-in-out 0s;
+}
+
 .input-icon-wrapper {
     position: relative;
     width: 100%;
