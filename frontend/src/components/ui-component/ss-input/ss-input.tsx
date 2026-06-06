@@ -41,15 +41,14 @@ const SSInput = <T extends FieldValues>({
   const inputType = isPasswordType ? (showLocalPassword ? "text" : "password") : type;
 
   return (
-    <div className="w-full max-w-full flex flex-col box-border">
+    <div className="w-full min-w-0 flex flex-col box-border">
       <label 
         htmlFor={name} 
         className="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2 text-left select-none"
       >
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
-      
-      <div className="relative w-full max-w-full flex items-center box-border rounded-xl">
+      <div className="relative w-full min-w-0 flex items-center box-border">
         {icon && (
           <span className="absolute left-4 flex items-center justify-center text-slate-400 dark:text-slate-500 z-10 pointer-events-none">
             <i className={icon}></i>
@@ -65,9 +64,9 @@ const SSInput = <T extends FieldValues>({
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           {...register(name, validation)}
-          className={`w-full h-11 block box-border rounded-xl border bg-slate-900/40 dark:bg-slate-900/60 text-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
-            icon ? "pl-11" : "px-4"
-          } ${isPasswordType ? "pr-11" : "pr-4"} ${
+          className={`w-full h-11 block box-border min-w-0 rounded-xl border bg-transparent text-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
+            icon ? "pl-10" : "px-4"
+          } ${type === "password" ? "pr-10" : "pr-4"} ${
             error
               ? "border-rose-500/80 focus:ring-rose-500/20 focus:border-rose-500 text-rose-200"
               : "border-slate-700 dark:border-slate-700/80 text-slate-100 dark:text-slate-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white dark:bg-slate-900/40"
