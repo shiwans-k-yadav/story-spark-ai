@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Post } from "../../../models/post";
 import { useGetLatestListsQuery } from "../../../redux/apis/post.api";
@@ -7,28 +7,25 @@ import LoadingAnimation from "../../loading/loading.component";
 const INITIAL_VISIBLE_COUNT = 6;
 
 const LatestPostsComponent = () => {
-  const { data, isLoading, isError, refetch } =
-    useGetLatestListsQuery(undefined);
-
+  const { data, isLoading, isError, refetch } = useGetLatestListsQuery(undefined);
   const navigate = useNavigate();
-
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+
+
+  // Remove duplicate posts based on _id
+  const uniquePosts = Array.from(
+    new Map((data?.posts ?? []).map((post) => [post._id, post])).values(),
+  );
 
   if (isLoading) return <LoadingAnimation />;
 
   if (isError) {
     return (
       <section className="mb-12 text-slate-100">
-        <h2 className="mb-6 text-2xl font-bold">
-          Latest Posts
-        </h2>
-
+        <h2 className="mb-6 text-2xl font-bold">Latest Posts</h2>
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-5 text-center text-red-200">
-          <p className="mb-3 font-semibold">
-            Failed to load latest posts.
-          </p>
-
+          <p className="mb-3 font-semibold">Failed to load latest posts.</p>
           <button
             onClick={() => refetch()}
             className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
@@ -40,82 +37,60 @@ const LatestPostsComponent = () => {
     );
   }
 
-  // Remove duplicate posts
   const seenIds = new Set<string>();
-
   const uniquePosts = (data?.posts ?? []).filter((post: Post) => {
     if (!post?._id || seenIds.has(post._id)) return false;
-
     seenIds.add(post._id);
-
     return true;
   });
 
-  const shouldShowLoadMore =
-    uniquePosts.length > INITIAL_VISIBLE_COUNT;
-
+  const shouldShowLoadMore = uniquePosts.length > INITIAL_VISIBLE_COUNT;
   const visiblePosts =
     showAllPosts || !shouldShowLoadMore
       ? uniquePosts
       : uniquePosts.slice(0, INITIAL_VISIBLE_COUNT);
 
   const toggleAccordion = (postId: string) => {
-    setExpandedPostId((prevId) =>
-      prevId === postId ? null : postId
-    );
+    setExpandedPostId((prevId) => (prevId === postId ? null : postId));
   };
 
   return (
     <section className="w-full min-w-0 max-w-full text-slate-100">
-      <h2 className="mb-6 text-2xl font-bold">
-        Latest Posts
-      </h2>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
+      <h2 className="mb-6 text-2xl font-bold">Latest Posts</h2>
+      <div className="max-w-full space-y-3">
         {visiblePosts.length > 0 ? (
           visiblePosts.map((post: Post) => {
-            const isExpanded =
-              expandedPostId === post._id;
+            const isExpanded = expandedPostId === post._id;
 
             return (
               <div
                 key={post._id}
-                className="motion-card-subtle story-panel flex h-full flex-col overflow-hidden rounded-2xl border border-slate-700/30 bg-[#252b3d]/40 transition-all duration-200 hover:-translate-y-1 hover:border-cyan-400/30"
+                className="motion-card-subtle story-panel w-full max-w-full rounded-lg overflow-hidden border border-slate-700/30 bg-[#252b3d]/40 transition-all duration-200"
               >
-                <div
+                <button
                   onClick={() => toggleAccordion(post._id)}
-                  className="w-full cursor-pointer p-5 text-left"
+                  className="flex w-full min-w-0 items-center justify-between p-4 text-left font-bold text-slate-100 hover:bg-slate-700/20 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="pr-4 text-lg font-bold text-slate-100 md:text-xl">
-                      {post.title}
-                    </h3>
+                  <span className="min-w-0 pr-4 text-lg break-words md:text-xl">{post.title}</span>
+                  <span className="shrink-0 text-slate-400 font-mono text-sm transition-transform duration-200 select-none">
+                    {isExpanded ? "▼" : "▶"}
+                  </span>
+                </button>
 
-                    <span className="shrink-0 text-sm font-mono text-slate-400">
-                      {isExpanded ? "▼" : "▶"}
-                    </span>
-                  </div>
-
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isExpanded
-                        ? "mt-4 max-h-[500px] opacity-100"
-                        : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    <p className="mb-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-400 md:text-base">
-                      {post.content ||
-                        "No preview content available."}
+                <div
+                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    isExpanded ? "max-h-[500px] border-t border-slate-700/30" : "max-h-0"
+                  }`}
+                >
+                  <div className="min-w-0 p-5 bg-[#1e2330]/30">
+                    <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-4 whitespace-pre-wrap break-words">
+                      {post.content || "No preview content available."}
                     </p>
 
                     <div className="flex justify-end">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-
-                          navigate(`/post/${post._id}`);
-                        }}
-                        className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500"
+                        onClick={() => navigate(`/post/${post._id}`)}
+                        className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 shadow-sm"
                       >
                         Read Full Story
                       </button>
@@ -126,12 +101,13 @@ const LatestPostsComponent = () => {
             );
           })
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-5 text-slate-500 dark:border-slate-800 dark:bg-slate-900/20 dark:text-slate-400">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 px-4 py-5 text-slate-500 dark:text-slate-400">
+            
             Posts are not available.
+          
           </div>
         )}
       </div>
-
       {shouldShowLoadMore && !showAllPosts && (
         <div className="mt-6">
           <button

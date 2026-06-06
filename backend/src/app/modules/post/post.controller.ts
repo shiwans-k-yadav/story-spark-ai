@@ -35,6 +35,27 @@ const getPosts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getPublishedPostsByAuthor = catchAsync(
+  async (req: Request, res: Response) => {
+    const token = await getToken(req);
+    const filters = pick(req.query, ["searchTerm"]);
+    const pagination = pick(req.query, paginationFields);
+    const result = await PostService.getPublishedPostsByAuthor(
+      token,
+      filters,
+      pagination
+    );
+
+    sendResponse<IPost[]>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Published stories fetched successfully!",
+      data: result.data,
+      meta: result.meta,
+    });
+  }
+);
+
 const getLatestPosts = catchAsync(async (req: Request, res: Response) => {
   const result = await PostService.getLatestPosts();
   sendResponse(res, {
@@ -79,7 +100,8 @@ const getSinglePost = catchAsync(async (req: Request, res: Response) => {
 
 const getPostsByTag = catchAsync(async (req: Request, res: Response) => {
   const tag = routeParam(req.params.tag);
-  const result = await PostService.getPostsByTag(tag);
+  const excludeId = req.query.excludeId as string | undefined;
+  const result = await PostService.getPostsByTag(tag, excludeId);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -100,13 +122,82 @@ const toggleBookmark = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updatePost = catchAsync(async (req: Request, res: Response) => {
+  const id = routeParam(req.params.id);
+  const postData = req.body;
+  const token = await getToken(req);
+  const result = await PostService.updatePost(id, postData, token);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Post updated successfully!",
+    data: result,
+  });
+});
+
+const deletePost = catchAsync(async (req: Request, res: Response) => {
+  const id = routeParam(req.params.id);
+  const token = await getToken(req);
+  const result = await PostService.deletePost(id, token);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Story removed successfully!",
+    data: result,
+  });
+});
+
+/* ============================================================
+   PATCHED CONTROLLERS — GSSoC '26 QUOTA INTERCEPTION
+   ============================================================ */
+
+const remixStory = catchAsync(async (req: Request, res: Response) => {
+  const { postId, prompt } = req.body;
+  const token = await getToken(req);
+  const result = await PostService.remixStory(postId, prompt, token);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Story remixed successfully!",
+    data: result,
+  });
+});
+
+const translateStory = catchAsync(async (req: Request, res: Response) => {
+  const { postId, language } = req.body;
+  const token = await getToken(req);
+  const result = await PostService.translateStory(postId, language, token);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Story translated successfully!",
+    data: result,
+  });
+});
+
+const getGenres = catchAsync(async (_req: Request, res: Response) => {
+  const result = await PostService.getGenres();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Genres fetched successfully!",
+    data: result,
+  });
+});
+
 export const PostController = {
   createPost,
   getPosts,
+  getPublishedPostsByAuthor,
   getLatestPosts,
   getFeaturedPosts,
   doFeaturedPosts,
   getSinglePost,
   getPostsByTag,
   toggleBookmark,
+  updatePost,
+  deletePost,
+  remixStory,
+  translateStory,
+  getGenres,
 };

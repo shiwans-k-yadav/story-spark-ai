@@ -1,254 +1,206 @@
-import { JSX, useEffect, useState } from "react";
+import React from "react";
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTopButton from "./components/ScrollToTopButton";
+import MagicCursorComponent from "./components/magic-cursor/magic_cursor.component";
+import NotFoundComponent from "./components/not-found.component";
+import StoryInspirationWrapper from "./components/StoryInspirationWrapper";
 import WritingAssistantComponent from "./components/writing-assistant/writing_assistant.component";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import StoryWorkspace from "./components/story/StoryWorkspace";
+import StoriesComponent from "./components/stories/stories.component";
+import BranchingStory from "./components/stories/BranchingStory";
+import TemplatesComponent from "./components/templates/templates.component";
+import CollabHome from "./components/collab/CollabHome";
+import CollabRoom from "./components/collab/CollabRoom";
+import { USER_ROLE } from "./constants/role";
+import { getUserInfo } from "./services/auth.service";
+import RootLayout from "./components/layout/root_layout.component";
+import DashboardLayout from "./components/dashboard/dashboard_layout.component";
+import SimpleProtectedRoute from "./components/ProtectedRoute";
+import AboutUsComponent from "./components/footer/about-us.tsx";
+import AnalyticsPage from "./components/dashboard/analytics/analytics.page";
+import BlogComponent from "./components/footer/blog.tsx";
+import BookmarksComponent from "./components/post/bookmarks.component";
+import CareerComponent from "./components/footer/career.tsx";
+import CommunityComponent from "./components/community/community.component";
+import Contact from "./components/contactus/contactus";
+import ContributorsComponent from "./components/footer/contributors";
+import CookiePolicy from "./components/footer/cookie-policy.tsx";
+import DashboardComponent from "./components/dashboard/dashboard.component";
+import EmailValidationComponent from "./components/email_validation/email.validation.component";
+import ExploreComponent from "./components/post/post.component";
+import ForgotPasswordComponent from "./components/login/forgot_password.component";
+import GuidelinesComponent from "./components/footer/guidelines.tsx";
+import HelpCenterComponent from "./components/help_center/help_center.component";
 import HeroSectionComponent from "./components/hero/hero_section.component";
 import HomeComponent from "./components/home/home.component";
 import LoginComponent from "./components/login/login.component";
-import SignUpComponent from "./components/signup/signup.component";
-import DashboardComponent from "./components/dashboard/dashboard.component";
-import RootLayout from "./components/layout/root_layout.component";
-import DashboardLayout from "./components/dashboard/dashboard_layout.component";
-import SettingComponent from "./components/dashboard/settings/settings.component";
-import StoriesComponent from "./components/stories/stories.component";
-import WriterApplicationComponent from "./components/dashboard/writers/writer_application.component";
-import UserComponent from "./components/dashboard/users/user.component";
-import PricingComponent from "./components/pricing/pricing.component";
-import ExploreComponent from "./components/post/post.component";
+import PaymentComponent from "./components/home/pricing/payment.component";
 import PostDetailsComponent from "./components/post/post.details.component";
-import BookmarksComponent from "./components/post/bookmarks.component";
-import { getUserInfo } from "./services/auth.service";
-import UserListComponent from "./components/dashboard/users/user.list.component";
-import NotFoundComponent from "./components/not-found.component";
-import EmailValidationComponent from "./components/email_validation/email.validation.component";
-import { USER_ROLE } from "./constants/role";
 import PostListsComponent from "./components/dashboard/posts/post_lists.component";
+import PricingComponent from "./components/pricing/pricing.component";
+import PrivacyPolicy from "./components/footer/Privacy.tsx";
 import ProfileComponent from "./components/dashboard/profile/profile.component";
-import AboutUsComponent from "./components/footer/about-us.tsx";
-import CareerComponent from "./components/footer/career.tsx";
-import ContactUsComponent from "./components/footer/contact-us.tsx";
-import BlogComponent from "./components/footer/blog.tsx";
-import HelpCenterComponent from "./components/footer/help-center.tsx";
-import GuidelinesComponent from "./components/footer/guidelines.tsx";
-import TemplatesComponent from "./components/templates/templates.component";
-import CommunityComponent from "./components/community/community.component";
-const ProtectedRoute = ({
-  element,
-  allowedRoles,
-}: {
-  element: JSX.Element;
+import PublishedStoriesComponent from "./components/dashboard/posts/published_stories.component";
+import ReportBug from "./components/report-bug/ReportBug";
+import ResourceDetailComponent from "./components/community/resource_detail.component";
+import ResourcesListComponent from "./components/community/resources_list.component";
+import ScrollToTop from "./components/ScrollToTop";
+import SettingComponent from "./components/dashboard/settings/settings.component";
+import SignUpComponent from "./components/signup/signup.component";
+import Terms from "./components/footer/terms.tsx";
+import UserComponent from "./components/dashboard/users/user.component";
+import WriterApplicationComponent from "./components/dashboard/writers/writer_application.component";
+
+type ProtectedRouteProps = {
   allowedRoles: string[];
-}) => {
-  const user = getUserInfo();
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return element;
+  element?: React.ReactElement;
 };
 
+const ProtectedRoute = ({ allowedRoles, element }: ProtectedRouteProps) => {
+  const user = getUserInfo();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return element ? element : <Outlet />;
+};
+
+const ALL_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER, USER_ROLE.USER];
+const ELEVATED_ADMIN_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN];
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: (
+      <>
+        
+        <MagicCursorComponent />
+        <ScrollToTop />
+        <RootLayout>
+          <Outlet />
+        </RootLayout>
+      </>
+    ),
+    children: [
+      { index: true, element: <><HeroSectionComponent /><HomeComponent /></> },
+      { path: "templates", element: <TemplatesComponent /> },
+      { path: "writing-assistant", element: <WritingAssistantComponent /> },
+      { path: "story-inspiration", element: <StoryInspirationWrapper /> },
+      { path: "login", element: <LoginComponent /> },
+      { path: "signup", element: <SignUpComponent /> },
+      { path: "forgot-password", element: <ForgotPasswordComponent /> },
+      { path: "pricing", element: <PricingComponent /> },
+      { path: "post/:id", element: <PostDetailsComponent /> },
+      { path: "contact-us", element: <Contact /> },
+      { path: "about-us", element: <AboutUsComponent /> },
+      { path: "career", element: <CareerComponent /> },
+      { path: "blog", element: <BlogComponent /> },
+      { path: "privacy-policy", element: <PrivacyPolicy /> },
+      { path: "cookie-policy", element: <CookiePolicy /> },
+      { path: "terms", element: <Terms /> },
+      { path: "help-center", element: <HelpCenterComponent /> },
+      { path: "guidelines", element: <GuidelinesComponent /> },
+      { path: "contributors", element: <ContributorsComponent /> },
+      { path: "report-bug", element: <ReportBug /> },
+
+      // Protected routes (logged-in users)
+      {
+        element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+        children: [
+          { path: "explore", element: <ExploreComponent /> },
+          { path: "bookmarks", element: <BookmarksComponent /> },
+          { path: "community", element: <CommunityComponent /> },
+          { path: "resources", element: <ResourcesListComponent /> },
+          { path: "resources/:resourceName", element: <ResourceDetailComponent /> },
+        ],
+      },
+
+      // Story routes (token-protected)
+      {
+        path: "stories",
+        element: (
+          <SimpleProtectedRoute>
+            <StoriesComponent />
+          </SimpleProtectedRoute>
+        ),
+      },
+      {
+        path: "branching-story",
+        element: (
+          <SimpleProtectedRoute>
+            <BranchingStory />
+          </SimpleProtectedRoute>
+        ),
+      },
+      {
+        path: "story-workspace",
+        element: (
+          <SimpleProtectedRoute>
+            <StoryWorkspace />
+          </SimpleProtectedRoute>
+        ),
+      },
+
+      { path: "*", element: <NotFoundComponent /> },
+    ],
+  },
+
+  // Isolated layout branches
+  { path: "/auth/email-validation", element: <EmailValidationComponent /> },
+  {
+    element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+    children: [
+      { path: "/payment", element: <PaymentComponent /> },
+      { path: "/collab", element: <CollabHome /> },
+      { path: "/collab/:roomId", element: <CollabRoom /> },
+    ],
+  },
+
+  // Dashboard
+  {
+    path: "/dashboard",
+    element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+    children: [
+      {
+        element: <DashboardLayout />,
+        children: [
+          { index: true, element: <DashboardComponent /> },
+          { path: "profile", element: <ProfileComponent /> },
+          {
+            element: <ProtectedRoute allowedRoles={ELEVATED_ADMIN_ROLES} />,
+            children: [
+              { path: "writers", element: <WriterApplicationComponent /> },
+              { path: "users", element: <UserComponent /> },
+            ],
+          },
+          {
+            element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+            children: [
+              { path: "settings", element: <SettingComponent /> },
+              { path: "published-stories", element: <PublishedStoriesComponent /> },
+            ],
+          },
+          {
+            element: <ProtectedRoute allowedRoles={[USER_ROLE.WRITER]} />,
+            children: [{ path: "analytics", element: <AnalyticsPage /> }],
+          },
+          {
+            element: <ProtectedRoute allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER]} />,
+            children: [{ path: "post-lists", element: <PostListsComponent /> }],
+          },
+        ],
+      },
+    ],
+  },
+]);
+
 function App() {
-
-
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
-  );
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  return (
-    <Router>
-
-      {/* Dark Mode Toggle Button */}
-      {/* <div className="fixed top-4 right-4 z-50">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-4 py-2 rounded-md bg-black text-white dark:bg-white dark:text-black transition-colors duration-300 shadow-md"
-        >
-          {darkMode ? "☀️ Light" : "🌙 Dark"}
-        </button>
-      </div> */}
-
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <RootLayout>
-              <HeroSectionComponent />
-              <HomeComponent />
-            </RootLayout>
-          }
-        />
-        <Route
-          path="/templates"
-          element={
-            <RootLayout>
-              <TemplatesComponent />
-            </RootLayout>
-          }
-        />
-        <Route
-          path="/writing-assistant"
-          element={
-            <RootLayout>
-              <WritingAssistantComponent />
-            </RootLayout>
-          }
-        />
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardComponent />} />
-
-          <Route
-            path="post-lists"
-            element={
-              <ProtectedRoute
-                element={<PostListsComponent />}
-                allowedRoles={[
-                  USER_ROLE.USER,
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.WRITER,
-                ]}
-              />
-            }
-          />
-
-          <Route
-            path="settings"
-            element={
-              <ProtectedRoute
-                element={<SettingComponent />}
-                allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN]}
-              />
-            }
-          />
-
-          <Route
-            path="profile"
-            element={
-              <ProtectedRoute
-                element={<ProfileComponent />}
-                allowedRoles={[
-                  USER_ROLE.USER,
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.WRITER,
-                ]}
-              />
-            }
-          />
-
-          <Route path="users">
-            <Route
-              index
-              element={
-                <ProtectedRoute
-                  element={<UserComponent />}
-                  allowedRoles={[
-                    USER_ROLE.USER,
-                    USER_ROLE.ADMIN,
-                    USER_ROLE.SUPER_ADMIN,
-                    USER_ROLE.WRITER,
-                  ]}
-                />
-              }
-            />
-
-            <Route
-              path="list"
-              element={
-                <ProtectedRoute
-                  element={<UserListComponent />}
-                  allowedRoles={[
-                    USER_ROLE.USER,
-                    USER_ROLE.ADMIN,
-                    USER_ROLE.SUPER_ADMIN,
-                    USER_ROLE.WRITER,
-                  ]}
-                />
-              }
-            />
-          </Route>
-
-          <Route
-            path="writers"
-            element={
-              <ProtectedRoute
-                element={<WriterApplicationComponent />}
-                allowedRoles={[
-                  USER_ROLE.WRITER,
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.USER,
-                ]}
-              />
-            }
-          />
-        </Route>
-
-        <Route path="/stories" element={<StoriesComponent />} />
-        <Route path="/login" element={<LoginComponent />} />
-
-        <Route
-          path="/auth/email-validation"
-          element={<EmailValidationComponent />}
-        />
-
-        <Route path="/signup" element={<SignUpComponent />} />
-        <Route path="/pricing" element={<PricingComponent />} />
-        <Route path="/explore" element={<ExploreComponent />} />
-        <Route
-          path="/bookmarks"
-          element={
-            <ProtectedRoute
-              element={
-                <RootLayout>
-                  <BookmarksComponent />
-                </RootLayout>
-              }
-              allowedRoles={[
-                USER_ROLE.USER,
-                USER_ROLE.WRITER,
-                USER_ROLE.ADMIN,
-                USER_ROLE.SUPER_ADMIN,
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/community"
-          element={
-            <RootLayout>
-              <CommunityComponent />
-            </RootLayout>
-          }
-        />
-        <Route path="/post/:id" element={<PostDetailsComponent />} />
-        <Route path="/about-us" element={<AboutUsComponent />} />
-        <Route path="/career" element={<CareerComponent />} />
-        <Route path="/contact-us" element={<ContactUsComponent />} />
-        <Route path="/blog" element={<BlogComponent />} />
-        <Route path="/help-center" element={<HelpCenterComponent />} />
-        <Route path="/guidelines" element={<GuidelinesComponent />} />
-        <Route path="/community" element={<CommunityComponent />} />
-        <Route path="*" element={<NotFoundComponent />} />
-      </Routes>
-
-    </Router>
-  );
+  return <RouterProvider router={router} />;
 }
+
 export default App;
